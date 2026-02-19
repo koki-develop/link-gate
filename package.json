@@ -8,6 +8,7 @@
     "dev": "plasmo dev",
     "build": "plasmo build",
     "package": "plasmo package",
+    "fmt": "prettier --write .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
