@@ -1,0 +1,17 @@
+version: "1.0"
+
+defaults:
+  base_dir: ../worktrees/link-gate
+
+hooks:
+  post_create:
+    - type: copy
+      from: .claude
+      to: .claude
+
+    - type: copy
+      from: .claude
+      to: .claude
+
+    - type: command
+      command: pnpm install
