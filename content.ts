@@ -45,10 +45,12 @@ const anchorHandlers = new WeakMap<HTMLAnchorElement, EventListener>()
 /**
  * Determines whether an anchor element points to an external (cross-origin) URL.
  *
+ * Uses anchor.href (the browser-resolved absolute URL) so that <base>
+ * elements are correctly accounted for when determining the effective origin.
+ *
  * Returns false for:
  *   - Empty or missing href attributes.
  *   - Fragment-only links (e.g., "#section").
- *   - Relative paths without a protocol (internal pages).
  *   - Same-origin URLs (even if they include the full protocol + host).
  *   - Non-HTTP(S) protocols (e.g., mailto:, javascript:).
  *
@@ -57,10 +59,9 @@ const anchorHandlers = new WeakMap<HTMLAnchorElement, EventListener>()
 function isExternalLink(anchor: HTMLAnchorElement): boolean {
   const href = anchor.getAttribute("href")
   if (!href || href.trim() === "" || href.startsWith("#")) return false
-  if (!href.startsWith("//") && !href.includes("://")) return false
 
   try {
-    const resolved = new URL(href, window.location.href)
+    const resolved = new URL(anchor.href)
     return (
       (resolved.protocol === "http:" || resolved.protocol === "https:") &&
       resolved.origin !== window.location.origin
@@ -72,7 +73,8 @@ function isExternalLink(anchor: HTMLAnchorElement): boolean {
 
 /**
  * Resolves the anchor's href to an absolute URL string.
- * Handles relative URLs by resolving them against the current page location.
+ * Uses anchor.href (the browser-resolved URL) which accounts for
+ * any <base> element on the page.
  * Returns null if the href is missing or cannot be parsed.
  */
 function resolveUrl(anchor: HTMLAnchorElement): string | null {
@@ -80,7 +82,7 @@ function resolveUrl(anchor: HTMLAnchorElement): string | null {
   if (!href) return null
 
   try {
-    return new URL(href, window.location.href).href
+    return new URL(anchor.href).href
   } catch {
     return null
   }
