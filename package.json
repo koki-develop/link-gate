@@ -30,6 +30,9 @@
     "host_permissions": [
       "https://*/*",
       "http://*/*"
+    ],
+    "permissions": [
+      "storage"
     ]
   }
 }

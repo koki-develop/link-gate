@@ -6,7 +6,7 @@ import type {
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { LinkGateOpenMessage } from "~types"
-import { isHttpUrl } from "~types"
+import { isHttpUrl, STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://*/*", "http://*/*"],
@@ -68,11 +68,13 @@ type DialogData = {
 function LinkPreview() {
   const [dialogData, setDialogData] = useState<DialogData | null>(null)
   const [visible, setVisible] = useState(false)
+  const [skipPreview, setSkipPreview] = useState(false)
 
   const open = useCallback((url: string, text: string, newTab: boolean) => {
     if (!isHttpUrl(url)) return
     const domain = new URL(url).hostname
     setDialogData({ url, domain, linkText: text || null, newTab })
+    setSkipPreview(false)
     setVisible(true)
   }, [])
 
@@ -80,8 +82,31 @@ function LinkPreview() {
     setVisible(false)
   }, [])
 
-  const proceed = useCallback(() => {
+  const proceed = useCallback(async () => {
     if (!dialogData) return
+
+    if (skipPreview) {
+      try {
+        const result = await chrome.storage.local.get(
+          STORAGE_KEY_ALLOWED_DOMAINS
+        )
+        const stored = result[STORAGE_KEY_ALLOWED_DOMAINS]
+        const domains: string[] = Array.isArray(stored) ? stored : []
+        if (!domains.includes(dialogData.domain)) {
+          domains.push(dialogData.domain)
+        }
+        await chrome.storage.local.set({
+          [STORAGE_KEY_ALLOWED_DOMAINS]: domains
+        })
+      } catch (err) {
+        console.warn(
+          "[Link Gate] Failed to save allowed domain:",
+          dialogData.domain,
+          err
+        )
+      }
+    }
+
     if (dialogData.newTab) {
       window.open(dialogData.url, "_blank", "noopener,noreferrer")
       close()
@@ -89,7 +114,7 @@ function LinkPreview() {
       close()
       window.location.href = dialogData.url
     }
-  }, [dialogData, close])
+  }, [dialogData, skipPreview, close])
 
   // Receive messages relayed by the background service worker.
   useEffect(() => {
@@ -141,6 +166,18 @@ function LinkPreview() {
             <p style={styles.linkText}>"{dialogData.linkText}"</p>
           )}
           <p style={styles.url}>{dialogData.url}</p>
+          <label style={styles.checkboxRow}>
+            <input
+              type="checkbox"
+              checked={skipPreview}
+              onChange={(e) => setSkipPreview(e.target.checked)}
+              style={styles.checkbox}
+            />
+            <span style={styles.checkboxLabel}>
+              Always allow links to{" "}
+              <span style={styles.checkboxDomain}>{dialogData.domain}</span>
+            </span>
+          </label>
           <div style={styles.buttonRow}>
             <button onClick={close} className="link-gate-back-button">
               Go back
@@ -202,7 +239,31 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: "#f4f6f7",
     borderRadius: 6,
     padding: "8px 12px",
-    margin: "0 0 32px"
+    margin: "0 0 16px"
+  },
+  checkboxRow: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    cursor: "pointer",
+    margin: "0 0 24px"
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
+    margin: 0,
+    cursor: "pointer",
+    accentColor: "#2563eb",
+    colorScheme: "light"
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: "#374151",
+    userSelect: "none"
+  },
+  checkboxDomain: {
+    fontWeight: 600,
+    color: "#111827"
   },
   buttonRow: {
     display: "flex",

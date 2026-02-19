@@ -18,3 +18,5 @@ export type LinkGateOpenMessage = {
   text: string
   newTab: boolean
 }
+
+export const STORAGE_KEY_ALLOWED_DOMAINS = "allowedDomains"

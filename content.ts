@@ -19,6 +19,7 @@
  */
 import type { PlasmoCSConfig } from "plasmo"
 
+import { STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
 import type { LinkGateOpenMessage } from "~types"
 
 /**
@@ -46,6 +47,33 @@ export const config: PlasmoCSConfig = {
  * or when processAllLinks() is called.
  */
 const PROCESSED_ATTR = "data-link-gate-processed"
+
+/**
+ * Set of hostnames the user has marked as "always allowed".
+ * Links to these domains bypass the preview dialog entirely.
+ *
+ * Loaded from chrome.storage.local on script init and kept in sync
+ * via the storage.onChanged listener so that changes made in other
+ * tabs or by the CSUI dialog take effect immediately.
+ */
+let allowedDomains = new Set<string>()
+
+chrome.storage.local.get(STORAGE_KEY_ALLOWED_DOMAINS).then((result) => {
+  const stored = result[STORAGE_KEY_ALLOWED_DOMAINS]
+  if (Array.isArray(stored)) {
+    allowedDomains = new Set(stored)
+  }
+}).catch((err) => {
+  console.warn("[Link Gate] Failed to load allowed domains:", err)
+})
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local") return
+  const change = changes[STORAGE_KEY_ALLOWED_DOMAINS]
+  if (!change) return
+  const newValue = change.newValue
+  allowedDomains = new Set(Array.isArray(newValue) ? newValue : [])
+})
 
 const anchorHandlers = new WeakMap<HTMLAnchorElement, EventListener>()
 
@@ -131,6 +159,14 @@ function processAnchor(anchor: HTMLAnchorElement): void {
 
     const absoluteUrl = resolveUrl(anchor)
     if (!absoluteUrl) return
+
+    // Skip the preview dialog for allowed domains and let the browser navigate normally.
+    try {
+      const hostname = new URL(absoluteUrl).hostname
+      if (allowedDomains.has(hostname)) return
+    } catch (err) {
+      console.warn("[Link Gate] Unexpected URL parse failure:", absoluteUrl, err)
+    }
 
     // Suppress the browser's default link navigation and prevent the event
     // from bubbling to other handlers, so we can route through the preview dialog.
