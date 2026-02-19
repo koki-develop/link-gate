@@ -99,7 +99,7 @@ function resolveUrl(anchor: HTMLAnchorElement): string | null {
  */
 function fallbackNavigate(url: string, newTab: boolean): void {
   if (newTab) {
-    window.open(url)
+    window.open(url, "_blank", "noopener,noreferrer")
   } else {
     window.location.href = url
   }
