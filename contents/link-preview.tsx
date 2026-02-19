@@ -1,3 +1,4 @@
+import cssText from "data-text:./link-preview.css"
 import type {
   PlasmoCSConfig,
   PlasmoGetShadowHostId,
@@ -6,8 +7,6 @@ import type {
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { isHttpUrl } from "~types"
-
-import cssText from "data-text:./link-preview.css"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://*/*", "http://*/*"],
