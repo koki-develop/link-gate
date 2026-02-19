@@ -37,8 +37,8 @@ importers:
         specifier: 3.8.1
         version: 3.8.1
       typescript:
-        specifier: 5.3.3
-        version: 5.3.3
+        specifier: 5.9.3
+        version: 5.9.3
 
 packages:
 
@@ -2942,13 +2942,13 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  typescript@5.3.3:
-    resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}
+  typescript@5.8.2:
+    resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
     engines: {node: '>=14.17'}
     hasBin: true
 
-  typescript@5.8.2:
-    resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -6178,9 +6178,9 @@ snapshots:
 
   typescript@5.2.2: {}
 
-  typescript@5.3.3: {}
-
   typescript@5.8.2: {}
+
+  typescript@5.9.3: {}
 
   undici-types@5.26.5: {}
 
