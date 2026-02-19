@@ -61,7 +61,9 @@ function parseParams(): PreviewParams {
   }
 
   if (!isHttpUrl(raw)) {
-    return { error: "The destination URL is invalid or uses an unsupported protocol." }
+    return {
+      error: "The destination URL is invalid or uses an unsupported protocol."
+    }
   }
 
   const parsed = new URL(raw)

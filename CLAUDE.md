@@ -47,6 +47,7 @@ Injected into all pages. Scans `<a>` elements for cross-origin links, marks them
 ### background.ts (Service Worker)
 
 Handles two message types:
+
 - `"open-preview"`: Stores source tab mapping in `chrome.storage.session`, then opens the preview tab page with query params (`url`, `text`, `newTab`)
 - `"navigate-tab"`: Validates sender URL starts with the extension origin and checks protocol (`http:`/`https:` only), then navigates the source tab to the destination
 
