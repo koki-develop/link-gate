@@ -30,7 +30,7 @@ type DialogData = {
   url: string
   domain: string
   linkText: string | null
-  newTab: boolean
+  target: string
 }
 
 function LinkPreview() {
@@ -38,10 +38,10 @@ function LinkPreview() {
   const [visible, setVisible] = useState(false)
   const [skipPreview, setSkipPreview] = useState(false)
 
-  const open = useCallback((url: string, text: string, newTab: boolean) => {
+  const open = useCallback((url: string, text: string, target: string) => {
     if (!isHttpUrl(url)) return
     const domain = normalizeHostname(new URL(url).hostname)
-    setDialogData({ url, domain, linkText: text || null, newTab })
+    setDialogData({ url, domain, linkText: text || null, target })
     setSkipPreview(false)
     setVisible(true)
   }, [])
@@ -75,12 +75,15 @@ function LinkPreview() {
       }
     }
 
-    if (dialogData.newTab) {
+    if (dialogData.target === "_blank") {
       window.open(dialogData.url, "_blank", "noopener,noreferrer")
       close()
-    } else {
+    } else if (dialogData.target === "_self" || dialogData.target === "") {
       close()
       window.location.href = dialogData.url
+    } else {
+      close()
+      window.open(dialogData.url, dialogData.target)
     }
   }, [dialogData, skipPreview, close])
 
@@ -88,7 +91,7 @@ function LinkPreview() {
   useEffect(() => {
     const handler = (message: LinkGateOpenMessage) => {
       if (message.type !== "link-gate:open") return
-      open(message.url, message.text, message.newTab)
+      open(message.url, message.text, message.target)
     }
     chrome.runtime.onMessage.addListener(handler)
     return () => chrome.runtime.onMessage.removeListener(handler)

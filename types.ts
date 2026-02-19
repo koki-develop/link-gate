@@ -27,7 +27,7 @@ export type LinkGateOpenMessage = {
   type: "link-gate:open"
   url: string
   text: string
-  newTab: boolean
+  target: string
 }
 
 export const STORAGE_KEY_ALLOWED_DOMAINS = "allowedDomains"

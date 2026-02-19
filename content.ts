@@ -183,22 +183,25 @@ function processAnchor(anchor: HTMLAnchorElement): void {
     // Gather context about how the link was clicked to determine
     // whether it should open in a new tab or replace the current one.
     const text = anchor.textContent?.trim() || ""
-    // The link should open in a "new tab" context if any of these are true:
-    //   - Middle-click (button === 1)
-    //   - The anchor has target="_blank"
-    //   - A modifier key is held (Cmd on macOS, Ctrl on Windows/Linux, Shift)
-    const newTab =
-      e.button === 1 ||
-      anchor.target === "_blank" ||
-      e.metaKey ||
-      e.ctrlKey ||
-      e.shiftKey
+    // Determine the effective navigation target:
+    //   - Middle-click (button === 1) or modifier key (Cmd/Ctrl/Shift)
+    //     forces "_blank" (new tab).
+    //   - Otherwise, preserve the anchor's original target attribute
+    //     (_blank, _top, _parent, named target) so iframe links
+    //     navigate the correct browsing context.
+    //   - Defaults to "_self" when no target is set.
+    const target =
+      e.button === 1 || e.metaKey || e.ctrlKey || e.shiftKey
+        ? "_blank"
+        : anchor.target || "_self"
 
     function navigateFallback(): void {
-      if (newTab) {
+      if (target === "_blank") {
         window.open(absoluteUrl, "_blank", "noopener,noreferrer")
-      } else {
+      } else if (target === "_self" || target === "") {
         window.location.href = absoluteUrl
+      } else {
+        window.open(absoluteUrl, target)
       }
     }
 
@@ -209,7 +212,7 @@ function processAnchor(anchor: HTMLAnchorElement): void {
         type: "link-gate:open",
         url: absoluteUrl,
         text,
-        newTab
+        target
       } satisfies LinkGateOpenMessage)
       .then((response: { success: boolean } | undefined) => {
         if (!response?.success) {
