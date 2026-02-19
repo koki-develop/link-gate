@@ -1,0 +1,195 @@
+.container {
+  width: 360px;
+  background-color: #ffffff;
+  font-family: system-ui, sans-serif;
+}
+
+.accentBar {
+  height: 4px;
+  background-color: #2563eb;
+}
+
+.header {
+  padding: 16px 16px 12px;
+}
+
+.brand {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+
+.heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.addRow {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 8px;
+}
+
+.addInput {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  color: #111827;
+  background-color: #ffffff;
+}
+
+.addInputError {
+  border-color: #dc2626;
+}
+
+.addButton {
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  background-color: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.addButton:hover {
+  background-color: #1d4ed8;
+}
+
+.errorText {
+  font-size: 12px;
+  color: #dc2626;
+  margin: 0;
+  padding: 0 16px 8px;
+}
+
+.editErrorText {
+  font-size: 12px;
+  color: #dc2626;
+  margin: 0;
+  padding: 4px 12px 4px 18px;
+}
+
+.list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.domainRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-left: 3px solid transparent;
+  transition: all 120ms ease;
+}
+
+.domainRow:not(.domainRowEditing):hover {
+  border-left-color: #2563eb;
+  background-color: #f9fafb;
+}
+
+.domainText {
+  flex: 1;
+  font-size: 13px;
+  color: #374151;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editInput {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+  color: #374151;
+}
+
+.editInputError {
+  border-color: #dc2626;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.saveButton:hover {
+  color: #16a34a;
+  background-color: #f0fdf4;
+}
+
+.cancelButton:hover {
+  color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.editButton:hover {
+  color: #2563eb;
+  background-color: #eff6ff;
+}
+
+.deleteButton:hover {
+  color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.separator {
+  height: 1px;
+  background-color: #f3f4f6;
+  margin: 0 12px;
+  border: none;
+}
+
+.footer {
+  padding: 10px 16px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+  gap: 8px;
+}
+
+.emptyTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.emptySub {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0;
+  text-align: center;
+}
