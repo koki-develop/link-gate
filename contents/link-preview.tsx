@@ -5,6 +5,7 @@ import type {
 } from "plasmo"
 import { useCallback, useEffect, useState } from "react"
 
+import type { LinkGateOpenMessage } from "~types"
 import { isHttpUrl } from "~types"
 
 export const config: PlasmoCSConfig = {
@@ -61,16 +62,14 @@ function LinkPreview() {
     }
   }, [dialogData, close])
 
-  // Receive "link-gate:open" events dispatched by content.ts.
+  // Receive messages relayed by the background service worker.
   useEffect(() => {
-    const handler = (e: Event) => {
-      const { url, text, newTab } = (
-        e as CustomEvent<{ url: string; text: string; newTab: boolean }>
-      ).detail
-      open(url, text, newTab)
+    const handler = (message: LinkGateOpenMessage) => {
+      if (message.type !== "link-gate:open") return
+      open(message.url, message.text, message.newTab)
     }
-    document.addEventListener("link-gate:open", handler)
-    return () => document.removeEventListener("link-gate:open", handler)
+    chrome.runtime.onMessage.addListener(handler)
+    return () => chrome.runtime.onMessage.removeListener(handler)
   }, [open])
 
   // Close on Escape key.
@@ -104,22 +103,22 @@ function LinkPreview() {
       }}
       onClick={close}>
       {dialogData && (
-      <div style={styles.card} onClick={(e) => e.stopPropagation()}>
-        <p style={styles.label}>You are about to visit an external site:</p>
-        <p style={styles.domain}>{dialogData.domain}</p>
-        {dialogData.linkText && (
-          <p style={styles.linkText}>"{dialogData.linkText}"</p>
-        )}
-        <p style={styles.url}>{dialogData.url}</p>
-        <div style={styles.buttonRow}>
-          <button onClick={close} style={styles.backButton}>
-            Go back
-          </button>
-          <button onClick={proceed} style={styles.proceedButton}>
-            Open
-          </button>
+        <div style={styles.card} onClick={(e) => e.stopPropagation()}>
+          <p style={styles.label}>You are about to visit an external site:</p>
+          <p style={styles.domain}>{dialogData.domain}</p>
+          {dialogData.linkText && (
+            <p style={styles.linkText}>"{dialogData.linkText}"</p>
+          )}
+          <p style={styles.url}>{dialogData.url}</p>
+          <div style={styles.buttonRow}>
+            <button onClick={close} style={styles.backButton}>
+              Go back
+            </button>
+            <button onClick={proceed} style={styles.proceedButton}>
+              Open
+            </button>
+          </div>
         </div>
-      </div>
       )}
     </div>
   )

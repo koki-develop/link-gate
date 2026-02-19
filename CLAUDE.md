@@ -21,14 +21,15 @@ Link Gate is a Chrome Extension (Manifest V3) that intercepts clicks on external
 
 ## Architecture
 
-The extension has two runtime components communicating via CustomEvent on the shared document:
+The extension has three runtime components communicating via chrome.runtime messaging:
 
 ### Message Flow
 
 ```
 [Web Page] click/middle-click external link
-  → content.ts intercepts, dispatches CustomEvent "link-gate:open"
-    → contents/link-preview.tsx (CSUI) receives event via document listener
+  → content.ts intercepts, sends message via chrome.runtime.sendMessage
+    → background.ts relays message to same frame via chrome.tabs.sendMessage
+      → contents/link-preview.tsx (CSUI) receives message via chrome.runtime.onMessage
       → shows in-page dialog overlay (Shadow DOM isolated)
         → [User clicks "Go back" / Escape / backdrop] → dialog closes
         → [User clicks "Open"]
@@ -40,13 +41,17 @@ The extension has two runtime components communicating via CustomEvent on the sh
 
 Defines the `isHttpUrl` validation utility that restricts navigation to `http:`/`https:` protocols.
 
+### background.ts (Background Service Worker)
+
+Relays `link-gate:open` messages from content.ts to the CSUI dialog in the same frame via `chrome.tabs.sendMessage`. Uses `frameId` to ensure messages are scoped to the originating frame.
+
 ### content.ts (Content Script)
 
-Injected into all pages. Scans `<a>` elements for cross-origin links, marks them with `data-link-gate-processed="true"` (non-external links get `"false"`), and uses a `MutationObserver` for dynamically added links. On `click` and `auxclick` (middle-click), prevents default navigation and dispatches a `"link-gate:open"` CustomEvent on `document` with URL, link text, and new-tab flag.
+Injected into all pages. Scans `<a>` elements for cross-origin links, marks them with `data-link-gate-processed="true"` (non-external links get `"false"`), and uses a `MutationObserver` for dynamically added links. On `click` and `auxclick` (middle-click), prevents default navigation and sends a `"link-gate:open"` message via `chrome.runtime.sendMessage` with URL, link text, and new-tab flag.
 
 ### contents/link-preview.tsx (CSUI Dialog)
 
-Plasmo Content Scripts UI component rendered inside a Shadow DOM. Listens for `"link-gate:open"` CustomEvent on `document`. Displays an overlay dialog showing the destination domain, link text, and full URL. "Go back" / Escape / backdrop click closes the dialog; "Open" navigates via `window.location.href` (same tab) or `window.open` (new tab). Uses `getShadowHostId` for stable element ID and `getStyle` with `:host { all: initial; }` for style isolation.
+Plasmo Content Scripts UI component rendered inside a Shadow DOM. Listens for `"link-gate:open"` messages via `chrome.runtime.onMessage`. Displays an overlay dialog showing the destination domain, link text, and full URL. "Go back" / Escape / backdrop click closes the dialog; "Open" navigates via `window.location.href` (same tab) or `window.open` (new tab). Uses `getShadowHostId` for stable element ID and `getStyle` with `:host { all: initial; }` for style isolation.
 
 ## Code Style
 

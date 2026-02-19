@@ -2,17 +2,24 @@
  * content.ts — Content Script
  *
  * Injected into every HTTP/HTTPS page the user visits. This script
- * intercepts clicks on external (cross-origin) links and dispatches
- * a custom event to trigger the in-page preview dialog (CSUI).
+ * intercepts clicks on external (cross-origin) links and sends a
+ * message to the background service worker to trigger the in-page
+ * preview dialog (CSUI).
  *
  * Key behaviors:
  *   - Scans all existing <a> elements on page load.
+ *   - Sends link data to the background service worker via
+ *     chrome.runtime.sendMessage, which relays it to the CSUI
+ *     dialog in the same frame. This channel is inaccessible
+ *     to page scripts.
  *   - Uses a MutationObserver to handle dynamically added links
  *     (e.g., links rendered by SPAs after initial load).
  *   - Marks processed anchors with a data attribute to avoid
  *     attaching duplicate event listeners.
  */
 import type { PlasmoCSConfig } from "plasmo"
+
+import type { LinkGateOpenMessage } from "~types"
 
 /**
  * Plasmo content script configuration.
@@ -101,8 +108,8 @@ function removeAnchorListeners(anchor: HTMLAnchorElement): void {
  *   1. Skips if already processed (has the data attribute).
  *   2. If the link is not external, marks it as processed with "false" and returns.
  *   3. For external links, attaches click and auxclick (middle-click) handlers
- *      that intercept navigation and send an "open-preview" message to the
- *      background script.
+ *      that intercept navigation and send a "link-gate:open" message to the
+ *      background service worker.
  *   4. Marks the anchor as processed with "true".
  */
 function processAnchor(anchor: HTMLAnchorElement): void {
@@ -144,13 +151,24 @@ function processAnchor(anchor: HTMLAnchorElement): void {
       e.ctrlKey ||
       e.shiftKey
 
-    // Dispatch a custom event to the CSUI dialog component,
-    // which runs in the same content script world and shares this document.
-    document.dispatchEvent(
-      new CustomEvent("link-gate:open", {
-        detail: { url: absoluteUrl, text, newTab }
+    // Send the link data to the background service worker, which
+    // relays it to the CSUI dialog in the same frame.
+    chrome.runtime
+      .sendMessage({
+        type: "link-gate:open",
+        url: absoluteUrl,
+        text,
+        newTab
+      } satisfies LinkGateOpenMessage)
+      .catch(() => {
+        // Fall back to default navigation so the user is not stranded
+        // (e.g., after an extension update invalidates the runtime context).
+        if (newTab) {
+          window.open(absoluteUrl, "_blank", "noopener,noreferrer")
+        } else {
+          window.location.href = absoluteUrl
+        }
       })
-    )
   }
 
   // Store the handler reference so it can be removed later if href changes.
@@ -178,11 +196,15 @@ function processAllLinks(): void {
 }
 
 /**
- * Sets up a MutationObserver on document.body to detect newly added DOM nodes.
+ * Sets up a MutationObserver on document.body to detect newly added DOM nodes
+ * and href attribute changes on existing anchors.
  * When new elements are inserted (e.g., by client-side rendering), any <a>
  * elements among them—or nested within them—are processed for link interception.
+ * When an existing anchor's href attribute changes, it is re-evaluated in case
+ * it has become (or stopped being) an external link.
  *
- * Observes with { childList: true, subtree: true } to catch additions
+ * Observes with { childList: true, subtree: true, attributes: true,
+ * attributeFilter: ["href"] } to catch additions and href changes
  * at any depth in the DOM tree.
  */
 function observeNewLinks(): void {

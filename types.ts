@@ -11,3 +11,10 @@ export function isHttpUrl(url: string): boolean {
     return false
   }
 }
+
+export type LinkGateOpenMessage = {
+  type: "link-gate:open"
+  url: string
+  text: string
+  newTab: boolean
+}
