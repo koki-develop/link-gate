@@ -170,7 +170,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 13,
     color: "#6b7280",
     wordBreak: "break-all",
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#f4f6f7",
     borderRadius: 6,
     padding: "8px 12px",
     margin: "0 0 32px"
