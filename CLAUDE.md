@@ -17,6 +17,7 @@ LinkGate is a Chrome Extension (Manifest V3) that intercepts clicks on external 
 - `pnpm dev` — Start Plasmo dev server with hot reload
 - `pnpm build` — Production build to `build/chrome-mv3-prod/`
 - `pnpm package` — Package build into `.zip` for store submission
+- `pnpm typecheck` — Run TypeScript type checking (no emit)
 
 ## Architecture
 
@@ -34,6 +35,10 @@ The extension has three runtime components communicating via `chrome.runtime.sen
         → (same tab) sends "navigate-tab" message to background.ts
           → background.ts navigates the original tab via chrome.tabs.update
 ```
+
+### types.ts (Shared Types)
+
+Defines the `Message` union type used by all runtime components for `chrome.runtime.sendMessage`, and the `isHttpUrl` validation utility that restricts navigation to `http:`/`https:` protocols.
 
 ### content.ts (Content Script)
 
