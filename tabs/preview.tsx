@@ -128,7 +128,7 @@ function PreviewPage() {
   // If query parameter parsing failed, show an error message with
   // a button to close this tab. No navigation is possible.
   // ────────────────────────────────────────────────────────────────
-  if (params.error) {
+  if (!("url" in params)) {
     return (
       <div style={styles.container}>
         <p style={styles.errorText}>{params.error}</p>

@@ -47,7 +47,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     await chrome.storage.session.remove(`${SOURCE_KEY_PREFIX}${tabId}`)
 
     // Remove mappings where this tab was a source tab
-    const all = await chrome.storage.session.get(null)
+    const all = (await chrome.storage.session.get(null)) as unknown as Record<string, unknown>
     const keysToRemove: string[] = []
     for (const [key, value] of Object.entries(all)) {
       if (key.startsWith(SOURCE_KEY_PREFIX) && value === tabId) {
