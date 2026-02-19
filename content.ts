@@ -45,6 +45,8 @@ export const config: PlasmoCSConfig = {
  */
 const PROCESSED_ATTR = "data-link-gate-processed"
 
+const anchorHandlers = new WeakMap<HTMLAnchorElement, EventListener>()
+
 /**
  * Determines whether an anchor element points to an external (cross-origin) URL.
  *
@@ -103,6 +105,14 @@ function fallbackNavigate(url: string, newTab: boolean): void {
   }
 }
 
+function removeAnchorListeners(anchor: HTMLAnchorElement): void {
+  const handler = anchorHandlers.get(anchor)
+  if (!handler) return
+  anchor.removeEventListener("click", handler)
+  anchor.removeEventListener("auxclick", handler)
+  anchorHandlers.delete(anchor)
+}
+
 /**
  * Processes a single <a> element:
  *   1. Skips if already processed (has the data attribute).
@@ -114,6 +124,10 @@ function fallbackNavigate(url: string, newTab: boolean): void {
  */
 function processAnchor(anchor: HTMLAnchorElement): void {
   if (anchor.hasAttribute(PROCESSED_ATTR)) return
+
+  // Clean up any previously registered listeners before re-evaluating.
+  // This prevents handler accumulation when href changes trigger re-processing.
+  removeAnchorListeners(anchor)
 
   if (!isExternalLink(anchor)) {
     anchor.setAttribute(PROCESSED_ATTR, "false")
@@ -168,10 +182,14 @@ function processAnchor(anchor: HTMLAnchorElement): void {
     }
   }
 
+  // Store the handler reference so it can be removed later if href changes.
+  const handler: EventListener = handleLinkClick as EventListener
+  anchorHandlers.set(anchor, handler)
+
   // Listen on both "click" (left-click) and "auxclick" (middle-click)
   // to intercept all common ways users open links.
-  anchor.addEventListener("click", handleLinkClick)
-  anchor.addEventListener("auxclick", handleLinkClick)
+  anchor.addEventListener("click", handler)
+  anchor.addEventListener("auxclick", handler)
 
   anchor.setAttribute(PROCESSED_ATTR, "true")
 }
