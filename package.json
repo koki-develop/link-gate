@@ -1,6 +1,6 @@
 {
   "name": "link-gate",
-  "displayName": "Link gate",
+  "displayName": "LinkGate",
   "version": "0.0.1",
   "description": "WIP",
   "author": "koki-develop <kou.pg.0131@gmail.com>",
@@ -25,7 +25,11 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://*/*"
+      "https://*/*",
+      "http://*/*"
+    ],
+    "permissions": [
+      "storage"
     ]
   }
 }
