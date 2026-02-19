@@ -1,0 +1,127 @@
+:host {
+  all: initial;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  font-family: system-ui, sans-serif;
+  transition: opacity 150ms ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.overlayVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 40px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  margin: 0 16px;
+}
+
+.label {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+.domain {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 12px 0;
+}
+
+.linkText {
+  font-size: 14px;
+  color: #374151;
+  font-style: italic;
+  margin: 0 0 16px;
+  word-break: break-all;
+}
+
+.url {
+  font-size: 13px;
+  color: #6b7280;
+  word-break: break-all;
+  background-color: #f4f6f7;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 0 0 16px;
+}
+
+.checkboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0 0 24px;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #2563eb;
+  color-scheme: light;
+}
+
+.checkboxLabel {
+  font-size: 14px;
+  color: #374151;
+  user-select: none;
+}
+
+.checkboxDomain {
+  font-weight: 600;
+  color: #111827;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.backButton {
+  padding: 10px 24px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.backButton:hover {
+  background-color: #f3f4f6;
+}
+
+.proceedButton {
+  padding: 10px 24px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: none;
+  background-color: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.proceedButton:hover {
+  background-color: #1d4ed8;
+}

@@ -1,3 +1,4 @@
+import styleText from "data-text:./link-preview.module.css"
 import type {
   PlasmoCSConfig,
   PlasmoGetShadowHostId,
@@ -7,6 +8,8 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { LinkGateOpenMessage } from "~types"
 import { isHttpUrl, STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
+
+import * as s from "./link-preview.module.css"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://*/*", "http://*/*"],
@@ -19,44 +22,9 @@ export const getShadowHostId: PlasmoGetShadowHostId = () =>
 
 export const getStyle: PlasmoGetStyle = () => {
   const style = document.createElement("style")
-  style.textContent = cssText
+  style.textContent = styleText
   return style
 }
-
-const cssText = `
-:host {
-  all: initial;
-}
-
-.link-gate-back-button {
-  padding: 10px 24px;
-  font-size: 15px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  color: #374151;
-  cursor: pointer;
-}
-
-.link-gate-back-button:hover {
-  background-color: #f3f4f6;
-}
-
-.link-gate-proceed-button {
-  padding: 10px 24px;
-  font-size: 15px;
-  border-radius: 8px;
-  border: none;
-  background-color: #2563eb;
-  color: #ffffff;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.link-gate-proceed-button:hover {
-  background-color: #1d4ed8;
-}
-`
 
 type DialogData = {
   url: string
@@ -152,37 +120,33 @@ function LinkPreview() {
 
   return (
     <div
-      style={{
-        ...styles.overlay,
-        opacity: visible ? 1 : 0,
-        pointerEvents: visible ? "auto" : "none"
-      }}
+      className={`${s.overlay} ${visible ? s.overlayVisible : ""}`}
       onClick={close}>
       {dialogData && (
-        <div style={styles.card} onClick={(e) => e.stopPropagation()}>
-          <p style={styles.label}>You are about to visit an external site:</p>
-          <p style={styles.domain}>{dialogData.domain}</p>
+        <div className={s.card} onClick={(e) => e.stopPropagation()}>
+          <p className={s.label}>You are about to visit an external site:</p>
+          <p className={s.domain}>{dialogData.domain}</p>
           {dialogData.linkText && (
-            <p style={styles.linkText}>"{dialogData.linkText}"</p>
+            <p className={s.linkText}>"{dialogData.linkText}"</p>
           )}
-          <p style={styles.url}>{dialogData.url}</p>
-          <label style={styles.checkboxRow}>
+          <p className={s.url}>{dialogData.url}</p>
+          <label className={s.checkboxRow}>
             <input
               type="checkbox"
               checked={skipPreview}
               onChange={(e) => setSkipPreview(e.target.checked)}
-              style={styles.checkbox}
+              className={s.checkbox}
             />
-            <span style={styles.checkboxLabel}>
+            <span className={s.checkboxLabel}>
               Always allow links to{" "}
-              <span style={styles.checkboxDomain}>{dialogData.domain}</span>
+              <span className={s.checkboxDomain}>{dialogData.domain}</span>
             </span>
           </label>
-          <div style={styles.buttonRow}>
-            <button onClick={close} className="link-gate-back-button">
+          <div className={s.buttonRow}>
+            <button onClick={close} className={s.backButton}>
               Go back
             </button>
-            <button onClick={proceed} className="link-gate-proceed-button">
+            <button onClick={proceed} className={s.proceedButton}>
               Open
             </button>
           </div>
@@ -190,86 +154,6 @@ function LinkPreview() {
       )}
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    zIndex: 2147483647,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    fontFamily: "system-ui, sans-serif",
-    transition: "opacity 150ms ease"
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 40,
-    maxWidth: 600,
-    width: "100%",
-    boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
-    margin: "0 16px"
-  },
-  label: {
-    fontSize: 16,
-    color: "#6b7280",
-    margin: 0,
-    marginBottom: 8
-  },
-  domain: {
-    fontSize: 28,
-    fontWeight: 700,
-    color: "#111827",
-    margin: "12px 0"
-  },
-  linkText: {
-    fontSize: 14,
-    color: "#374151",
-    fontStyle: "italic",
-    margin: "0 0 16px",
-    wordBreak: "break-all"
-  },
-  url: {
-    fontSize: 13,
-    color: "#6b7280",
-    wordBreak: "break-all",
-    backgroundColor: "#f4f6f7",
-    borderRadius: 6,
-    padding: "8px 12px",
-    margin: "0 0 16px"
-  },
-  checkboxRow: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    cursor: "pointer",
-    margin: "0 0 24px"
-  },
-  checkbox: {
-    width: 16,
-    height: 16,
-    margin: 0,
-    cursor: "pointer",
-    accentColor: "#2563eb",
-    colorScheme: "light"
-  },
-  checkboxLabel: {
-    fontSize: 14,
-    color: "#374151",
-    userSelect: "none"
-  },
-  checkboxDomain: {
-    fontWeight: 600,
-    color: "#111827"
-  },
-  buttonRow: {
-    display: "flex",
-    gap: 12,
-    justifyContent: "flex-end"
-  }
 }
 
 export default LinkPreview
