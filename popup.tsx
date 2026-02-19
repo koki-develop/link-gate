@@ -9,7 +9,7 @@
  */
 import { useEffect, useRef, useState } from "react"
 
-import { STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
+import { normalizeHostname, STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
 
 import s from "./popup.module.css"
 
@@ -40,13 +40,9 @@ function normalizeDomain(input: string): NormalizeResult {
       if (url.protocol !== "http:" && url.protocol !== "https:") {
         return { ok: false, reason: "non-http" }
       }
-      hostname = url.hostname
+      hostname = normalizeHostname(url.hostname)
     } else {
-      hostname = new URL(`https://${trimmed}`).hostname
-    }
-    // Strip trailing dot for consistency with content.ts hostname extraction
-    if (hostname.endsWith(".")) {
-      hostname = hostname.slice(0, -1)
+      hostname = normalizeHostname(new URL(`https://${trimmed}`).hostname)
     }
     if (!hostname || hostname === ".") {
       return { ok: false, reason: "invalid" }

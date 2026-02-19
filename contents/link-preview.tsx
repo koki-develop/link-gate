@@ -7,7 +7,7 @@ import type {
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { LinkGateOpenMessage } from "~types"
-import { isHttpUrl, STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
+import { isHttpUrl, normalizeHostname, STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
 
 import * as s from "./link-preview.module.css"
 
@@ -40,7 +40,7 @@ function LinkPreview() {
 
   const open = useCallback((url: string, text: string, newTab: boolean) => {
     if (!isHttpUrl(url)) return
-    const domain = new URL(url).hostname
+    const domain = normalizeHostname(new URL(url).hostname)
     setDialogData({ url, domain, linkText: text || null, newTab })
     setSkipPreview(false)
     setVisible(true)

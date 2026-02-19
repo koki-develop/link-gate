@@ -19,7 +19,7 @@
  */
 import type { PlasmoCSConfig } from "plasmo"
 
-import { STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
+import { normalizeHostname, STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
 import type { LinkGateOpenMessage } from "~types"
 
 /**
@@ -165,7 +165,7 @@ function processAnchor(anchor: HTMLAnchorElement): void {
 
     // Skip the preview dialog for allowed domains and let the browser navigate normally.
     try {
-      const hostname = new URL(absoluteUrl).hostname
+      const hostname = normalizeHostname(new URL(absoluteUrl).hostname)
       if (allowedDomains.has(hostname)) return
     } catch (err) {
       console.warn(
