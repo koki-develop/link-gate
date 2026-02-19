@@ -27,6 +27,35 @@ const cssText = `
 :host {
   all: initial;
 }
+
+.link-gate-back-button {
+  padding: 10px 24px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.link-gate-back-button:hover {
+  background-color: #f3f4f6;
+}
+
+.link-gate-proceed-button {
+  padding: 10px 24px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: none;
+  background-color: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.link-gate-proceed-button:hover {
+  background-color: #1d4ed8;
+}
 `
 
 type DialogData = {
@@ -113,10 +142,10 @@ function LinkPreview() {
           )}
           <p style={styles.url}>{dialogData.url}</p>
           <div style={styles.buttonRow}>
-            <button onClick={close} style={styles.backButton}>
+            <button onClick={close} className="link-gate-back-button">
               Go back
             </button>
-            <button onClick={proceed} style={styles.proceedButton}>
+            <button onClick={proceed} className="link-gate-proceed-button">
               Open
             </button>
           </div>
@@ -179,25 +208,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     gap: 12,
     justifyContent: "flex-end"
-  },
-  backButton: {
-    padding: "10px 24px",
-    fontSize: 15,
-    borderRadius: 8,
-    border: "1px solid #d1d5db",
-    backgroundColor: "#ffffff",
-    color: "#374151",
-    cursor: "pointer"
-  },
-  proceedButton: {
-    padding: "10px 24px",
-    fontSize: 15,
-    borderRadius: 8,
-    border: "none",
-    backgroundColor: "#2563eb",
-    color: "#ffffff",
-    cursor: "pointer",
-    fontWeight: 600
   }
 }
 
