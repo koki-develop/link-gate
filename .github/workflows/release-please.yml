@@ -1,0 +1,60 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  release-please:
+    name: Release Please
+    timeout-minutes: 10
+    permissions:
+      contents: write # Required to create releases and update release branches
+      pull-requests: write # Required to create and update release pull requests
+      issues: write # Required to label issues and PRs created by release-please
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.release-please.outputs.tag_name }}
+      should-release: ${{ steps.release-please.outputs.release_created }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - id: release-please
+        uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
+        with:
+          release-type: node
+          token: ${{ github.token }}
+
+  publish:
+    name: Publish
+    needs: release-please
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to upload release artifacts
+    if: ${{ needs.release-please.outputs.should-release == 'true' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: Build the extension
+        run: pnpm build
+      - name: Package the extension into a zip artifact
+        run: pnpm package
+
+      - name: Create Release
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        with:
+          tag_name: ${{ needs.release-please.outputs.tag }}
+          files: build/chrome-mv3-prod.zip
