@@ -62,4 +62,4 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Typecheck the code
-        run: bun run typecheck
+        run: pnpm run typecheck
