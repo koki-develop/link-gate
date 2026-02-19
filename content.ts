@@ -2,9 +2,8 @@
  * content.ts — Content Script
  *
  * Injected into every HTTP/HTTPS page the user visits. This script
- * intercepts clicks on external (cross-origin) links and, instead of
- * allowing the browser to navigate directly, sends a message to the
- * background service worker to open a preview/confirmation page.
+ * intercepts clicks on external (cross-origin) links and dispatches
+ * a custom event to trigger the in-page preview dialog (CSUI).
  *
  * Key behaviors:
  *   - Scans all existing <a> elements on page load.
@@ -12,12 +11,8 @@
  *     (e.g., links rendered by SPAs after initial load).
  *   - Marks processed anchors with a data attribute to avoid
  *     attaching duplicate event listeners.
- *   - Falls back to normal browser navigation if communication
- *     with the background script fails.
  */
 import type { PlasmoCSConfig } from "plasmo"
-
-import type { Message } from "~types"
 
 /**
  * Plasmo content script configuration.
@@ -91,20 +86,6 @@ function resolveUrl(anchor: HTMLAnchorElement): string | null {
   }
 }
 
-/**
- * Fallback navigation used when communication with the background
- * service worker fails (e.g., extension context invalidated, service
- * worker not responding). Performs a standard browser navigation
- * so that the user's click is never silently swallowed.
- */
-function fallbackNavigate(url: string, newTab: boolean): void {
-  if (newTab) {
-    window.open(url, "_blank", "noopener,noreferrer")
-  } else {
-    window.location.href = url
-  }
-}
-
 function removeAnchorListeners(anchor: HTMLAnchorElement): void {
   const handler = anchorHandlers.get(anchor)
   if (!handler) return
@@ -134,7 +115,7 @@ function processAnchor(anchor: HTMLAnchorElement): void {
     return
   }
 
-  async function handleLinkClick(e: MouseEvent) {
+  function handleLinkClick(e: MouseEvent) {
     // Only handle left-click (button 0) and middle-click (button 1).
     // Right-clicks and other buttons are ignored to preserve context menu behavior.
     if (e.button !== 0 && e.button !== 1) return
@@ -143,7 +124,7 @@ function processAnchor(anchor: HTMLAnchorElement): void {
     if (!absoluteUrl) return
 
     // Suppress the browser's default link navigation and prevent the event
-    // from bubbling to other handlers, so we can route through the preview page.
+    // from bubbling to other handlers, so we can route through the preview dialog.
     e.preventDefault()
     e.stopPropagation()
 
@@ -161,25 +142,13 @@ function processAnchor(anchor: HTMLAnchorElement): void {
       e.ctrlKey ||
       e.shiftKey
 
-    // Send the intercepted link details to the background service worker,
-    // which will open the preview/confirmation page in a new tab.
-    // If the message fails or the response indicates failure, fall back
-    // to normal browser navigation to ensure the user is never stuck.
-    try {
-      const response = await chrome.runtime.sendMessage({
-        type: "open-preview",
-        url: absoluteUrl,
-        text,
-        newTab
-      } satisfies Message)
-      if (!response?.success) {
-        console.warn("[LinkGate] Preview request failed:", response)
-        fallbackNavigate(absoluteUrl, newTab)
-      }
-    } catch (err) {
-      console.error("[LinkGate] Failed to send message to background:", err)
-      fallbackNavigate(absoluteUrl, newTab)
-    }
+    // Dispatch a custom event to the CSUI dialog component,
+    // which runs in the same content script world and shares this document.
+    document.dispatchEvent(
+      new CustomEvent("link-gate:open", {
+        detail: { url: absoluteUrl, text, newTab }
+      })
+    )
   }
 
   // Store the handler reference so it can be removed later if href changes.

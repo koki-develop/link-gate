@@ -21,39 +21,32 @@ LinkGate is a Chrome Extension (Manifest V3) that intercepts clicks on external 
 
 ## Architecture
 
-The extension has three runtime components communicating via `chrome.runtime.sendMessage`:
+The extension has two runtime components communicating via CustomEvent on the shared document:
 
 ### Message Flow
 
 ```
 [Web Page] click/middle-click external link
-  → content.ts intercepts, sends "open-preview" message
-    → background.ts stores tab mapping in chrome.storage.session,
-      opens tabs/preview.html with query params
-      → [User clicks "Open" in preview page]
-        → (new tab) preview navigates directly via window.location.href
-        → (same tab) sends "navigate-tab" message to background.ts
-          → background.ts navigates the original tab via chrome.tabs.update
+  → content.ts intercepts, dispatches CustomEvent "link-gate:open"
+    → contents/link-preview.tsx (CSUI) receives event via document listener
+      → shows in-page dialog overlay (Shadow DOM isolated)
+        → [User clicks "Go back" / Escape / backdrop] → dialog closes
+        → [User clicks "Open"]
+          → (new tab context) window.open(url, "_blank", "noopener,noreferrer")
+          → (same tab context) window.location.href = url
 ```
 
 ### types.ts (Shared Types)
 
-Defines the `Message` union type used by all runtime components for `chrome.runtime.sendMessage`, and the `isHttpUrl` validation utility that restricts navigation to `http:`/`https:` protocols.
+Defines the `isHttpUrl` validation utility that restricts navigation to `http:`/`https:` protocols.
 
 ### content.ts (Content Script)
 
-Injected into all pages. Scans `<a>` elements for cross-origin links, marks them with `data-link-gate-processed="true"` (non-external links get `"false"`), and uses a `MutationObserver` for dynamically added links. On `click` and `auxclick` (middle-click), prevents default navigation and sends `"open-preview"` to background with URL, link text, and new-tab flag. The source tab ID is obtained by background via `sender.tab.id`.
+Injected into all pages. Scans `<a>` elements for cross-origin links, marks them with `data-link-gate-processed="true"` (non-external links get `"false"`), and uses a `MutationObserver` for dynamically added links. On `click` and `auxclick` (middle-click), prevents default navigation and dispatches a `"link-gate:open"` CustomEvent on `document` with URL, link text, and new-tab flag.
 
-### background.ts (Service Worker)
+### contents/link-preview.tsx (CSUI Dialog)
 
-Handles two message types:
-
-- `"open-preview"`: Stores source tab mapping in `chrome.storage.session`, then opens the preview tab page with query params (`url`, `text`, `newTab`)
-- `"navigate-tab"`: Validates sender URL starts with the extension origin and checks protocol (`http:`/`https:` only), then navigates the source tab to the destination
-
-### tabs/preview.tsx (Tab Page)
-
-React confirmation page. Reads query params to display destination domain, link text, and full URL. "Go back" closes the tab; "Open" either navigates directly via `window.location.href` (if opened in a new tab) or sends `"navigate-tab"` to background to navigate the original tab, then closes itself.
+Plasmo Content Scripts UI component rendered inside a Shadow DOM. Listens for `"link-gate:open"` CustomEvent on `document`. Displays an overlay dialog showing the destination domain, link text, and full URL. "Go back" / Escape / backdrop click closes the dialog; "Open" navigates via `window.location.href` (same tab) or `window.open` (new tab). Uses `getShadowHostId` for stable element ID and `getStyle` with `:host { all: initial; }` for style isolation.
 
 ## Code Style
 
