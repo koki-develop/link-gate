@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "description": "WIP",
   "author": "koki-develop <kou.pg.0131@gmail.com>",
+  "packageManager": "pnpm@10.30.0",
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
