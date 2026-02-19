@@ -7,7 +7,11 @@ import type {
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { LinkGateOpenMessage } from "~types"
-import { isHttpUrl, normalizeHostname, STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
+import {
+  isHttpUrl,
+  normalizeHostname,
+  STORAGE_KEY_ALLOWED_DOMAINS
+} from "~types"
 
 import * as s from "./link-preview.module.css"
 
