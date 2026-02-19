@@ -194,6 +194,14 @@ function processAnchor(anchor: HTMLAnchorElement): void {
       e.ctrlKey ||
       e.shiftKey
 
+    function navigateFallback(): void {
+      if (newTab) {
+        window.open(absoluteUrl, "_blank", "noopener,noreferrer")
+      } else {
+        window.location.href = absoluteUrl
+      }
+    }
+
     // Send the link data to the background service worker, which
     // relays it to the CSUI dialog in the same frame.
     chrome.runtime
@@ -203,14 +211,13 @@ function processAnchor(anchor: HTMLAnchorElement): void {
         text,
         newTab
       } satisfies LinkGateOpenMessage)
-      .catch(() => {
-        // Fall back to default navigation so the user is not stranded
-        // (e.g., after an extension update invalidates the runtime context).
-        if (newTab) {
-          window.open(absoluteUrl, "_blank", "noopener,noreferrer")
-        } else {
-          window.location.href = absoluteUrl
+      .then((response: { success: boolean } | undefined) => {
+        if (!response?.success) {
+          navigateFallback()
         }
+      })
+      .catch(() => {
+        navigateFallback()
       })
   }
 
