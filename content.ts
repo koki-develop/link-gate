@@ -58,14 +58,17 @@ const PROCESSED_ATTR = "data-link-gate-processed"
  */
 let allowedDomains = new Set<string>()
 
-chrome.storage.local.get(STORAGE_KEY_ALLOWED_DOMAINS).then((result) => {
-  const stored = result[STORAGE_KEY_ALLOWED_DOMAINS]
-  if (Array.isArray(stored)) {
-    allowedDomains = new Set(stored)
-  }
-}).catch((err) => {
-  console.warn("[Link Gate] Failed to load allowed domains:", err)
-})
+chrome.storage.local
+  .get(STORAGE_KEY_ALLOWED_DOMAINS)
+  .then((result) => {
+    const stored = result[STORAGE_KEY_ALLOWED_DOMAINS]
+    if (Array.isArray(stored)) {
+      allowedDomains = new Set(stored)
+    }
+  })
+  .catch((err) => {
+    console.warn("[Link Gate] Failed to load allowed domains:", err)
+  })
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local") return
@@ -165,7 +168,11 @@ function processAnchor(anchor: HTMLAnchorElement): void {
       const hostname = new URL(absoluteUrl).hostname
       if (allowedDomains.has(hostname)) return
     } catch (err) {
-      console.warn("[Link Gate] Unexpected URL parse failure:", absoluteUrl, err)
+      console.warn(
+        "[Link Gate] Unexpected URL parse failure:",
+        absoluteUrl,
+        err
+      )
     }
 
     // Suppress the browser's default link navigation and prevent the event
