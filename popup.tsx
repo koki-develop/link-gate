@@ -171,6 +171,9 @@ function IndexPopup() {
       }
       setAddInput("")
       addInputRef.current?.focus()
+    } catch (err) {
+      console.error("[Link Gate] Failed to load allowed domains:", err)
+      setStorageError("Failed to load allowed domains. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -186,6 +189,9 @@ function IndexPopup() {
       if (!saved) {
         setStorageError("Failed to remove domain. Please try again.")
       }
+    } catch (err) {
+      console.error("[Link Gate] Failed to load allowed domains:", err)
+      setStorageError("Failed to load allowed domains. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -232,6 +238,9 @@ function IndexPopup() {
         return
       }
       setEditingDomain(null)
+    } catch (err) {
+      console.error("[Link Gate] Failed to load allowed domains:", err)
+      setStorageError("Failed to load allowed domains. Please try again.")
     } finally {
       setSaving(false)
     }
