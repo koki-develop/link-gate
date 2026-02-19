@@ -3,7 +3,7 @@ import type {
   PlasmoGetShadowHostId,
   PlasmoGetStyle
 } from "plasmo"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { LinkGateOpenMessage } from "~types"
 import { isHttpUrl } from "~types"
@@ -83,14 +83,16 @@ function LinkPreview() {
   }, [visible, close])
 
   // Disable body scroll while visible.
+  const savedOverflow = useRef("")
   useEffect(() => {
     if (visible) {
+      savedOverflow.current = document.body.style.overflow
       document.body.style.overflow = "hidden"
     } else {
-      document.body.style.overflow = ""
+      document.body.style.overflow = savedOverflow.current
     }
     return () => {
-      document.body.style.overflow = ""
+      document.body.style.overflow = savedOverflow.current
     }
   }, [visible])
 
