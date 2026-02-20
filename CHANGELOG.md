@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/koki-develop/link-gate/compare/v0.1.1...v0.1.2) (2026-02-20)
+
+
+### Bug Fixes
+
+* remove overly broad host permissions from manifest ([97089c8](https://github.com/koki-develop/link-gate/commit/97089c8d5c9a6c9a5ea8434f6946be288ca0e352))
+
 ## [0.1.1](https://github.com/koki-develop/link-gate/compare/v0.1.0...v0.1.1) (2026-02-20)
 
 
