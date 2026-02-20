@@ -14,8 +14,8 @@
  *     to page scripts.
  *   - Uses a MutationObserver to handle dynamically added links
  *     (e.g., links rendered by SPAs after initial load).
- *   - Marks processed anchors with a data attribute to avoid
- *     attaching duplicate event listeners.
+ *   - Tracks processed anchors in an in-memory WeakSet to avoid
+ *     attaching duplicate event listeners without modifying the DOM.
  */
 import type { PlasmoCSConfig } from "plasmo"
 
@@ -38,15 +38,12 @@ export const config: PlasmoCSConfig = {
 }
 
 /**
- * Data attribute used to mark <a> elements that have already been
- * processed by this content script. The value is set to:
- *   - "true"  if the link is external and an event listener was attached.
- *   - "false" if the link was checked but determined to be internal/ignored.
- *
- * This prevents duplicate processing when the MutationObserver fires
- * or when processAllLinks() is called.
+ * In-memory set of <a> elements that have already been processed by
+ * this content script. Using a WeakSet avoids modifying the DOM with
+ * tracking attributes, which can disrupt SPA frameworks like Turbo Drive
+ * that diff or morph the DOM during navigation.
  */
-const PROCESSED_ATTR = "data-link-gate-processed"
+const processedAnchors = new WeakSet<HTMLAnchorElement>()
 
 /**
  * Set of hostnames the user has marked as "always allowed".
@@ -136,22 +133,22 @@ function removeAnchorListeners(anchor: HTMLAnchorElement): void {
 
 /**
  * Processes a single <a> element:
- *   1. Skips if already processed (has the data attribute).
- *   2. If the link is not external, marks it as processed with "false" and returns.
+ *   1. Skips if already tracked in the processedAnchors WeakSet.
+ *   2. If the link is not external, adds it to the set and returns.
  *   3. For external links, attaches click and auxclick (middle-click) handlers
  *      that intercept navigation and send a "link-gate:open" message to the
  *      background service worker.
- *   4. Marks the anchor as processed with "true".
+ *   4. Adds the anchor to the processedAnchors set.
  */
 function processAnchor(anchor: HTMLAnchorElement): void {
-  if (anchor.hasAttribute(PROCESSED_ATTR)) return
+  if (processedAnchors.has(anchor)) return
 
   // Clean up any previously registered listeners before re-evaluating.
   // This prevents handler accumulation when href changes trigger re-processing.
   removeAnchorListeners(anchor)
 
   if (!isExternalLink(anchor)) {
-    anchor.setAttribute(PROCESSED_ATTR, "false")
+    processedAnchors.add(anchor)
     return
   }
 
@@ -233,7 +230,7 @@ function processAnchor(anchor: HTMLAnchorElement): void {
   anchor.addEventListener("click", handler)
   anchor.addEventListener("auxclick", handler)
 
-  anchor.setAttribute(PROCESSED_ATTR, "true")
+  processedAnchors.add(anchor)
 }
 
 // ─── Initialization ──────────────────────────────────────────────────
@@ -243,9 +240,7 @@ function processAnchor(anchor: HTMLAnchorElement): void {
 
 /** Scans the entire document for unprocessed <a> elements and processes each one. */
 function processAllLinks(): void {
-  document
-    .querySelectorAll<HTMLAnchorElement>(`a:not([${PROCESSED_ATTR}])`)
-    .forEach(processAnchor)
+  document.querySelectorAll<HTMLAnchorElement>("a").forEach(processAnchor)
 }
 
 /**
@@ -268,7 +263,7 @@ function observeNewLinks(): void {
         mutation.type === "attributes" &&
         mutation.target instanceof HTMLAnchorElement
       ) {
-        mutation.target.removeAttribute(PROCESSED_ATTR)
+        processedAnchors.delete(mutation.target)
         processAnchor(mutation.target)
         continue
       }
@@ -281,9 +276,7 @@ function observeNewLinks(): void {
           processAnchor(el as HTMLAnchorElement)
         }
 
-        el.querySelectorAll<HTMLAnchorElement>(
-          `a:not([${PROCESSED_ATTR}])`
-        ).forEach(processAnchor)
+        el.querySelectorAll<HTMLAnchorElement>("a").forEach(processAnchor)
       }
     }
   })
