@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/koki-develop/link-gate/compare/v0.1.2...v0.1.3) (2026-02-20)
+
+
+### Bug Fixes
+
+* replace background relay and React CSUI with vanilla DOM dialog ([6eb6997](https://github.com/koki-develop/link-gate/commit/6eb6997f1afac66a7994b81ca36bbf14bb80a945))
+
 ## [0.1.2](https://github.com/koki-develop/link-gate/compare/v0.1.1...v0.1.2) (2026-02-20)
 
 
