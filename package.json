@@ -27,10 +27,6 @@
     "typescript": "5.9.3"
   },
   "manifest": {
-    "host_permissions": [
-      "https://*/*",
-      "http://*/*"
-    ],
     "permissions": [
       "storage"
     ]
