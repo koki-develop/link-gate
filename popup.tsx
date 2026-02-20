@@ -4,7 +4,7 @@
  * Plasmo popup page for managing the per-domain allow list.
  * Reads and writes allowed domains to chrome.storage.local under
  * the STORAGE_KEY_ALLOWED_DOMAINS key. Stays in sync with external
- * changes (e.g., the CSUI dialog's "Always allow" checkbox) via
+ * changes (e.g., the preview dialog's "Always allow" checkbox) via
  * chrome.storage.onChanged.
  */
 import { useEffect, useRef, useState } from "react"
@@ -99,7 +99,7 @@ function IndexPopup() {
   }, [])
 
   // Keep the domain list in sync with changes made by other contexts
-  // (e.g., the CSUI dialog's "Always allow" checkbox or other tabs).
+  // (e.g., the preview dialog's "Always allow" checkbox or other tabs).
   useEffect(() => {
     const handler = (
       changes: { [key: string]: chrome.storage.StorageChange },

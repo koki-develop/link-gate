@@ -22,21 +22,20 @@ Link Gate is a Chrome Extension (Manifest V3) that intercepts clicks on external
 
 ## Architecture
 
-The extension has four runtime components communicating via chrome.runtime messaging:
+The extension has three runtime components:
 
 ### Message Flow
 
 ```
 [Web Page] click/middle-click external link
-  → content.ts intercepts, sends message via chrome.runtime.sendMessage
-    → background.ts relays message to same frame via chrome.tabs.sendMessage
-      → contents/link-preview.tsx (CSUI) receives message via chrome.runtime.onMessage
-      → shows in-page dialog overlay (Shadow DOM isolated)
-        → [User clicks "Go back" / Escape / backdrop] → dialog closes
-        → [User clicks "Open"]
-          → (_blank target) window.open(url, "_blank", "noopener,noreferrer")
-          → (_self/empty target) window.location.href = url
-          → (named target) window.open(url, target)
+  → content.ts intercepts, calls showDialog() from dialog.ts
+    → dialog.ts creates on-demand Shadow DOM overlay on <html>
+    → shows in-page dialog overlay (Shadow DOM isolated)
+      → [User clicks "Go back" / Escape / backdrop] → dialog closes, host removed from DOM
+      → [User clicks "Open"]
+        → (_blank target) window.open(url, "_blank", "noopener,noreferrer")
+        → (_self/empty target) window.location.href = url
+        → (named target) window.open(url, target)
 
 [Extension popup] popup.tsx
   → Manages per-domain allow list in chrome.storage.local
@@ -45,19 +44,15 @@ The extension has four runtime components communicating via chrome.runtime messa
 
 ### types.ts (Shared Types)
 
-Defines the `isHttpUrl` validation utility that restricts navigation to `http:`/`https:` protocols, the `normalizeHostname` utility that strips `www.` prefixes for consistent domain comparison, the `LinkGateOpenMessage` message type (with `url`, `text`, and `target` string fields), and the `STORAGE_KEY_ALLOWED_DOMAINS` storage key constant for the per-domain allow list.
-
-### background.ts (Background Service Worker)
-
-Relays `link-gate:open` messages from content.ts to the CSUI dialog in the same frame via `chrome.tabs.sendMessage`. Uses `frameId` to ensure messages are scoped to the originating frame.
+Defines the `normalizeHostname` utility that strips trailing dots for consistent domain comparison and the `STORAGE_KEY_ALLOWED_DOMAINS` storage key constant for the per-domain allow list.
 
 ### content.ts (Content Script)
 
-Injected into all pages (`all_frames: true`, `run_at: "document_idle"`). Scans `<a>` elements for cross-origin links and tracks processed anchors via an in-memory `WeakSet<HTMLAnchorElement>`. Uses a `MutationObserver` for dynamically added links and href attribute changes. Tracks per-anchor event handlers via a `WeakMap` for proper cleanup on href changes. Loads allowed domains from `chrome.storage.local` (with error handling via `.catch()`) and syncs via `chrome.storage.onChanged`; links to allowed domains (compared using `normalizeHostname`) bypass the dialog. On `click` and `auxclick` (middle-click), prevents default navigation and sends a `"link-gate:open"` message via `chrome.runtime.sendMessage` with URL, link text, and target string (preserves the anchor's `target` attribute; middle-click or modifier keys force `"_blank"`; defaults to `"_self"`). Falls back to direct navigation if `sendMessage` fails (e.g., after extension update), handling `_blank`, `_self`, and named targets appropriately.
+Injected into all pages (`all_frames: true`, `run_at: "document_idle"`). Scans `<a>` elements for cross-origin links and tracks processed anchors via an in-memory `WeakSet<HTMLAnchorElement>`. Uses a `MutationObserver` for dynamically added links and href attribute changes. Tracks per-anchor event handlers via a `WeakMap` for proper cleanup on href changes. Loads allowed domains from `chrome.storage.local` (with error handling via `.catch()`) and syncs via `chrome.storage.onChanged`; links to allowed domains (compared using `normalizeHostname`) bypass the dialog. On `click` and `auxclick` (middle-click), prevents default navigation and calls `showDialog()` from `dialog.ts` with the URL, link text, and target string (preserves the anchor's `target` attribute; middle-click or modifier keys force `"_blank"`; defaults to `"_self"`).
 
-### contents/link-preview.tsx (CSUI Dialog)
+### dialog.ts (Dialog Module)
 
-Plasmo Content Scripts UI component rendered inside a Shadow DOM (`all_frames: true`, `run_at: "document_idle"`). Listens for `"link-gate:open"` messages via `chrome.runtime.onMessage`. Displays an overlay dialog showing the destination domain (via `normalizeHostname`), link text, and full URL with an "Always allow links to [domain]" checkbox. "Go back" / Escape / backdrop click closes the dialog; "Open" navigates based on the `target` field: `window.location.href` for `_self`/empty, `window.open(url, "_blank", "noopener,noreferrer")` for `_blank`, or `window.open(url, target)` for named targets. If the checkbox is checked, saves the domain to `chrome.storage.local`. Locks body scroll while visible. Uses `getShadowHostId` for stable element ID and `getStyle` with `:host { all: initial; }` for style isolation. Styles are defined in `contents/link-preview.module.css` and imported via Plasmo's `data-text:` syntax.
+Vanilla DOM module that creates an on-demand Shadow DOM overlay when `showDialog()` is called and removes it from the DOM when closed. The Shadow DOM host (`<div id="link-gate-preview-host">`) is appended to `document.documentElement` (not `<body>`) to avoid interference with SPA frameworks like Turbo Drive that replace `<body>` contents. Displays an overlay dialog showing the destination domain (via `normalizeHostname`), link text, and full URL with an "Always allow links to [domain]" checkbox. "Go back" / Escape / backdrop click closes the dialog with a fade-out transition, then removes the host element; "Open" navigates based on the `target` field: `window.location.href` for `_self`/empty, `window.open(url, "_blank", "noopener,noreferrer")` for `_blank`, or `window.open(url, target)` for named targets. If the checkbox is checked, saves the domain to `chrome.storage.local`. Locks body scroll while visible. Styles are defined in `link-preview.css` and injected into the Shadow DOM via Plasmo's `data-text:` import.
 
 ### popup.tsx (Extension Popup)
 

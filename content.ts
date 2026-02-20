@@ -2,16 +2,12 @@
  * content.ts — Content Script
  *
  * Injected into every HTTP/HTTPS page the user visits. This script
- * intercepts clicks on external (cross-origin) links and sends a
- * message to the background service worker to trigger the in-page
- * preview dialog (CSUI).
+ * intercepts clicks on external (cross-origin) links and shows a
+ * preview dialog via the showDialog() function from dialog.ts.
  *
  * Key behaviors:
  *   - Scans all existing <a> elements on page load.
- *   - Sends link data to the background service worker via
- *     chrome.runtime.sendMessage, which relays it to the CSUI
- *     dialog in the same frame. This channel is inaccessible
- *     to page scripts.
+ *   - Creates an on-demand Shadow DOM overlay per click, removed on close.
  *   - Uses a MutationObserver to handle dynamically added links
  *     (e.g., links rendered by SPAs after initial load).
  *   - Tracks processed anchors in an in-memory WeakSet to avoid
@@ -19,8 +15,8 @@
  */
 import type { PlasmoCSConfig } from "plasmo"
 
+import { showDialog } from "~dialog"
 import { normalizeHostname, STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
-import type { LinkGateOpenMessage } from "~types"
 
 /**
  * Plasmo content script configuration.
@@ -51,7 +47,7 @@ const processedAnchors = new WeakSet<HTMLAnchorElement>()
  *
  * Loaded from chrome.storage.local on script init and kept in sync
  * via the storage.onChanged listener so that changes made in other
- * tabs or by the CSUI dialog take effect immediately.
+ * tabs or by the dialog take effect immediately.
  */
 let allowedDomains = new Set<string>()
 
@@ -136,8 +132,8 @@ function removeAnchorListeners(anchor: HTMLAnchorElement): void {
  *   1. Skips if already tracked in the processedAnchors WeakSet.
  *   2. If the link is not external, adds it to the set and returns.
  *   3. For external links, attaches click and auxclick (middle-click) handlers
- *      that intercept navigation and send a "link-gate:open" message to the
- *      background service worker.
+ *      that intercept navigation and call showDialog() to display
+ *      the preview overlay.
  *   4. Adds the anchor to the processedAnchors set.
  */
 function processAnchor(anchor: HTMLAnchorElement): void {
@@ -192,7 +188,14 @@ function processAnchor(anchor: HTMLAnchorElement): void {
         ? "_blank"
         : anchor.target || "_self"
 
-    function navigateFallback(): void {
+    try {
+      showDialog(absoluteUrl, text, target)
+    } catch (err) {
+      console.error(
+        "[Link Gate] Failed to show confirmation dialog, falling back to direct navigation:",
+        absoluteUrl,
+        err
+      )
       if (target === "_blank") {
         window.open(absoluteUrl, "_blank", "noopener,noreferrer")
       } else if (target === "_self" || target === "") {
@@ -201,24 +204,6 @@ function processAnchor(anchor: HTMLAnchorElement): void {
         window.open(absoluteUrl, target)
       }
     }
-
-    // Send the link data to the background service worker, which
-    // relays it to the CSUI dialog in the same frame.
-    chrome.runtime
-      .sendMessage({
-        type: "link-gate:open",
-        url: absoluteUrl,
-        text,
-        target
-      } satisfies LinkGateOpenMessage)
-      .then((response: { success: boolean } | undefined) => {
-        if (!response?.success) {
-          navigateFallback()
-        }
-      })
-      .catch(() => {
-        navigateFallback()
-      })
   }
 
   // Store the handler reference so it can be removed later if href changes.

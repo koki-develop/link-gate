@@ -126,3 +126,9 @@
 .proceedButton:hover {
   background-color: #1d4ed8;
 }
+
+.popupBlocked {
+  font-size: 13px;
+  color: #dc2626;
+  margin: 0 0 16px;
+}
