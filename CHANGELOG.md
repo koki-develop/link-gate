@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/koki-develop/link-gate/compare/v0.1.0...v0.1.1) (2026-02-20)
+
+
+### Bug Fixes
+
+* Replace DOM tracking attribute with WeakSet to avoid SPA reload issues ([32aa2bc](https://github.com/koki-develop/link-gate/commit/32aa2bc068ca656f2af0979a4ec6218f38300beb))
+
 ## 0.1.0 (2026-02-19)
 
 

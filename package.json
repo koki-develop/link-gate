@@ -1,7 +1,7 @@
 {
   "name": "link-gate",
   "displayName": "Link Gate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Your gatekeeper for external links.",
   "author": "koki-develop <kou.pg.0131@gmail.com>",
   "packageManager": "pnpm@10.30.0",
