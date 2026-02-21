@@ -111,18 +111,33 @@ const handlers: RedirectExtractor[] = [
 ]
 
 export function detectRedirect(url: string): RedirectInfo | null {
-  let parsed: URL
-  try {
-    parsed = new URL(url)
-  } catch {
-    return null
+  let currentUrl = url
+  let lastInfo: RedirectInfo | null = null
+
+  for (;;) {
+    let parsed: URL
+    try {
+      parsed = new URL(currentUrl)
+    } catch {
+      break
+    }
+
+    let destination: string | null = null
+    for (const handler of handlers) {
+      try {
+        destination = handler(parsed)
+      } catch {
+        continue
+      }
+      if (destination !== null) break
+    }
+
+    if (destination === null) break
+
+    const destinationDomain = normalizeHostname(new URL(destination).hostname)
+    lastInfo = { destinationUrl: destination, destinationDomain }
+    currentUrl = destination
   }
 
-  for (const handler of handlers) {
-    const destination = handler(parsed)
-    if (destination === null) continue
-    const destinationDomain = normalizeHostname(new URL(destination).hostname)
-    return { destinationUrl: destination, destinationDomain }
-  }
-  return null
+  return lastInfo
 }

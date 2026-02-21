@@ -380,4 +380,59 @@ describe("detectRedirect", () => {
       expect(result).not.toBeNull()
     })
   })
+
+  // ─── Recursive / nested redirect chains ───
+
+  describe("recursive redirect resolution", () => {
+    it("resolves two-level chain: YouTube → Google → destination", () => {
+      const inner = encodeURIComponent(
+        "https://www.google.com/url?q=https://example.com"
+      )
+      const result = detectRedirect(
+        `https://www.youtube.com/redirect?q=${inner}`
+      )
+      expect(result).toEqual({
+        destinationUrl: "https://example.com/",
+        destinationDomain: "example.com"
+      })
+    })
+
+    it("resolves two-level chain: Google → YouTube → destination", () => {
+      const inner = encodeURIComponent(
+        "https://www.youtube.com/redirect?q=https://example.com"
+      )
+      const result = detectRedirect(`https://www.google.com/url?q=${inner}`)
+      expect(result).toEqual({
+        destinationUrl: "https://example.com/",
+        destinationDomain: "example.com"
+      })
+    })
+
+    it("resolves three-level chain: YouTube → Google → Facebook → destination", () => {
+      const inner2 = encodeURIComponent(
+        "https://l.facebook.com/l.php?u=https://example.com/deep"
+      )
+      const inner1 = encodeURIComponent(
+        `https://www.google.com/url?q=${inner2}`
+      )
+      const result = detectRedirect(
+        `https://www.youtube.com/redirect?q=${inner1}`
+      )
+      expect(result).toEqual({
+        destinationUrl: "https://example.com/deep",
+        destinationDomain: "example.com"
+      })
+    })
+
+    it("resolves same-domain redirect chain: Google → Google → destination", () => {
+      const inner = encodeURIComponent(
+        "https://www.google.com/url?q=https://example.com"
+      )
+      const result = detectRedirect(`https://www.google.com/url?q=${inner}`)
+      expect(result).toEqual({
+        destinationUrl: "https://example.com/",
+        destinationDomain: "example.com"
+      })
+    })
+  })
 })
