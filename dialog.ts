@@ -1,5 +1,6 @@
 import cssText from "data-text:./link-preview.css"
 
+import type { RedirectInfo } from "~redirect"
 import { normalizeHostname, STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
 
 type DialogState = {
@@ -7,11 +8,11 @@ type DialogState = {
   overlay: HTMLDivElement
   checkboxEl: HTMLInputElement
   url: string
-  domain: string
   target: string
   savedOverflow: string
   escapeHandler: (e: KeyboardEvent) => void
   transitionEndHandler: (() => void) | null
+  effectiveDomain: string
 }
 
 let activeDialog: DialogState | null = null
@@ -64,24 +65,33 @@ function showPopupBlockedMessage(state: DialogState): void {
 
 async function proceedNavigation(state: DialogState): Promise<void> {
   if (activeDialog !== state) return
-  const { url, domain, target, checkboxEl } = state
+  const { url, target, checkboxEl, effectiveDomain } = state
 
   if (checkboxEl.checked) {
     try {
       const result = await chrome.storage.local.get(STORAGE_KEY_ALLOWED_DOMAINS)
       const stored = result[STORAGE_KEY_ALLOWED_DOMAINS]
       const domains: string[] = Array.isArray(stored) ? stored : []
-      if (!domains.includes(domain)) {
-        domains.push(domain)
+      if (!domains.includes(effectiveDomain)) {
+        domains.push(effectiveDomain)
       }
       await chrome.storage.local.set({
         [STORAGE_KEY_ALLOWED_DOMAINS]: domains
       })
     } catch (err) {
-      console.warn("[Link Gate] Failed to save allowed domain:", domain, err)
+      console.error(
+        "[Link Gate] Failed to save allowed domain:",
+        effectiveDomain,
+        err
+      )
     }
   }
 
+  // Navigation intentionally uses the original redirect URL (state.url), not the resolved
+  // destination URL. The intermediary may carry auth tokens, session IDs, or consent
+  // parameters required by the destination. The dialog displays this original redirect URL
+  // so users can see the full URL the browser will actually navigate to, including the
+  // intermediary.
   if (target === "_blank") {
     const w = window.open(url, "_blank", "noopener,noreferrer")
     if (!w) {
@@ -104,7 +114,12 @@ async function proceedNavigation(state: DialogState): Promise<void> {
   }
 }
 
-export function showDialog(url: string, text: string, target: string): void {
+export function showDialog(
+  url: string,
+  text: string,
+  target: string,
+  redirectInfo: RedirectInfo | null
+): void {
   let parsed: URL
   try {
     parsed = new URL(url)
@@ -124,7 +139,8 @@ export function showDialog(url: string, text: string, target: string): void {
     removeHost(prev)
   }
 
-  const domain = normalizeHostname(parsed.hostname)
+  const originalDomain = normalizeHostname(parsed.hostname)
+  const effectiveDomain = redirectInfo?.destinationDomain ?? originalDomain
 
   const host = document.createElement("div")
   host.id = "link-gate-preview-host"
@@ -143,13 +159,32 @@ export function showDialog(url: string, text: string, target: string): void {
 
   const label = document.createElement("p")
   label.className = "label"
-  label.textContent = "You are about to visit an external site:"
+  label.textContent = redirectInfo
+    ? "You are about to visit an external site via a redirect:"
+    : "You are about to visit an external site:"
   card.appendChild(label)
 
   const domainEl = document.createElement("p")
   domainEl.className = "domain"
-  domainEl.textContent = domain
+  domainEl.textContent = effectiveDomain
   card.appendChild(domainEl)
+
+  if (redirectInfo) {
+    const redirectViaEl = document.createElement("div")
+    redirectViaEl.className = "redirectVia"
+
+    const redirectViaLabelEl = document.createElement("span")
+    redirectViaLabelEl.className = "redirectViaLabel"
+    redirectViaLabelEl.textContent = "Redirected from "
+    redirectViaEl.appendChild(redirectViaLabelEl)
+
+    const redirectOrigDomainEl = document.createElement("span")
+    redirectOrigDomainEl.className = "redirectOrigDomain"
+    redirectOrigDomainEl.textContent = originalDomain
+    redirectViaEl.appendChild(redirectOrigDomainEl)
+
+    card.appendChild(redirectViaEl)
+  }
 
   const trimmedText = text.trim()
   if (trimmedText) {
@@ -178,7 +213,7 @@ export function showDialog(url: string, text: string, target: string): void {
 
   const checkboxDomainEl = document.createElement("span")
   checkboxDomainEl.className = "checkboxDomain"
-  checkboxDomainEl.textContent = domain
+  checkboxDomainEl.textContent = effectiveDomain
   checkboxLabelEl.appendChild(checkboxDomainEl)
   checkboxRowEl.appendChild(checkboxLabelEl)
   card.appendChild(checkboxRowEl)
@@ -216,11 +251,11 @@ export function showDialog(url: string, text: string, target: string): void {
     overlay,
     checkboxEl,
     url,
-    domain,
     target,
     savedOverflow,
     escapeHandler,
-    transitionEndHandler: null
+    transitionEndHandler: null,
+    effectiveDomain
   }
 
   proceedButton.addEventListener("click", () => {

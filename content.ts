@@ -16,6 +16,7 @@
 import type { PlasmoCSConfig } from "plasmo"
 
 import { showDialog } from "~dialog"
+import { detectRedirect } from "~redirect"
 import { normalizeHostname, STORAGE_KEY_ALLOWED_DOMAINS } from "~types"
 
 /**
@@ -156,17 +157,26 @@ function processAnchor(anchor: HTMLAnchorElement): void {
     const absoluteUrl = resolveUrl(anchor)
     if (!absoluteUrl) return
 
-    // Skip the preview dialog for allowed domains and let the browser navigate normally.
-    try {
-      const hostname = normalizeHostname(new URL(absoluteUrl).hostname)
-      if (allowedDomains.has(hostname)) return
-    } catch (err) {
-      console.warn(
-        "[Link Gate] Unexpected URL parse failure:",
-        absoluteUrl,
-        err
-      )
+    // Skip the preview dialog for allowed domains.
+    // For known redirect services, check the redirect destination domain
+    // rather than the intermediary domain. See redirect.ts for supported services.
+    const redirectInfo = detectRedirect(absoluteUrl)
+    let effectiveDomain: string | null = null
+    if (redirectInfo) {
+      effectiveDomain = redirectInfo.destinationDomain
+    } else {
+      try {
+        effectiveDomain = normalizeHostname(new URL(absoluteUrl).hostname)
+      } catch (err) {
+        console.warn(
+          "[Link Gate] Unexpected URL parse failure:",
+          absoluteUrl,
+          err
+        )
+        return
+      }
     }
+    if (allowedDomains.has(effectiveDomain)) return
 
     // Suppress the browser's default link navigation and prevent the event
     // from bubbling to other handlers, so we can route through the preview dialog.
@@ -189,7 +199,7 @@ function processAnchor(anchor: HTMLAnchorElement): void {
         : anchor.target || "_self"
 
     try {
-      showDialog(absoluteUrl, text, target)
+      showDialog(absoluteUrl, text, target, redirectInfo)
     } catch (err) {
       console.error(
         "[Link Gate] Failed to show confirmation dialog, falling back to direct navigation:",

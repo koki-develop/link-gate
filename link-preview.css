@@ -132,3 +132,14 @@
   color: #dc2626;
   margin: 0 0 16px;
 }
+
+.redirectVia {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 16px;
+}
+
+.redirectOrigDomain {
+  font-weight: 600;
+  color: #374151;
+}
