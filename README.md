@@ -3,6 +3,10 @@ Link Gate
 </h1>
 
 <p align="center">
+<img src="./assets/icon.png" alt="" width="120">
+</p>
+
+<p align="center">
 <i>
 Your gatekeeper for external links.
 </i>
