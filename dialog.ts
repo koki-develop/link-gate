@@ -48,20 +48,6 @@ function closeDialog(): void {
   const fallbackTimer = setTimeout(cleanup, 300)
 }
 
-function showPopupBlockedMessage(state: DialogState): void {
-  const card = state.overlay.querySelector(".card")
-  if (!card || card.querySelector(".popupBlocked")) return
-  const msg = document.createElement("p")
-  msg.className = "popupBlocked"
-  msg.textContent =
-    "Pop-up was blocked by your browser. Please allow pop-ups for this site and try again."
-  const buttonRow = card.querySelector(".buttonRow")
-  if (buttonRow) {
-    card.insertBefore(msg, buttonRow)
-  } else {
-    card.appendChild(msg)
-  }
-}
 
 async function proceedNavigation(state: DialogState): Promise<void> {
   if (activeDialog !== state) return
@@ -93,23 +79,13 @@ async function proceedNavigation(state: DialogState): Promise<void> {
   // so users can see the full URL the browser will actually navigate to, including the
   // intermediary.
   if (target === "_blank") {
-    const w = window.open(url, "_blank", "noopener,noreferrer")
-    if (!w) {
-      console.warn("[Link Gate] Popup blocked for:", url)
-      showPopupBlockedMessage(state)
-      return
-    }
+    window.open(url, "_blank", "noopener,noreferrer")
     closeDialog()
   } else if (target === "_self" || target === "") {
     closeDialog()
     window.location.href = url
   } else {
-    const w = window.open(url, target)
-    if (!w) {
-      console.warn("[Link Gate] Popup blocked for:", url)
-      showPopupBlockedMessage(state)
-      return
-    }
+    window.open(url, target)
     closeDialog()
   }
 }
