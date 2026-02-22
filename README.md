@@ -24,7 +24,9 @@ Your gatekeeper for external links.
 
 ## Installation
 
-WIP
+Add to your browser from Chrome Web Store.
+
+- [Link Gate - Chrome Web Store](https://chromewebstore.google.com/detail/mhhbigmikenkhebdahloddmacebllobb)
 
 ## License
 
