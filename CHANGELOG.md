@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/koki-develop/link-gate/compare/v0.1.3...v0.2.0) (2026-02-22)
+
+
+### Features
+
+* detect redirect URLs and show actual destination domain in dialog ([65e4cbd](https://github.com/koki-develop/link-gate/commit/65e4cbd4d8b2158a008a395296fc1852ccee59cc))
+* resolve nested redirect chains iteratively ([1c48239](https://github.com/koki-develop/link-gate/commit/1c4823920679b3ba1f42950a08780415649f775a))
+
 ## [0.1.3](https://github.com/koki-develop/link-gate/compare/v0.1.2...v0.1.3) (2026-02-20)
 
 
