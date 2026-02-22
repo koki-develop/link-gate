@@ -48,7 +48,6 @@ function closeDialog(): void {
   const fallbackTimer = setTimeout(cleanup, 300)
 }
 
-
 async function proceedNavigation(state: DialogState): Promise<void> {
   if (activeDialog !== state) return
   const { url, target, checkboxEl, effectiveDomain } = state
